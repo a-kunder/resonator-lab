@@ -1,0 +1,26 @@
+{
+  "resonator": "Res1.1",
+  "sweep": {
+    "start_hz": 5929700000.0,
+    "stop_hz": 5954700000.0,
+    "points": 101,
+    "if_bandwidth_hz": 1000.0,
+    "averages": 7,
+    "s_parameter": "S43",
+    "timeout_s": 1800.0,
+    "settle_s": 0.0
+  },
+  "powers_dbm": [
+    -45.0,
+    -30.0,
+    -15.0
+  ],
+  "temperatures_k": [
+    0.025
+  ],
+  "temperature_mode": "fixed",
+  "temperature_tolerance_k": 0.001,
+  "temperature_timeout_s": 1800.0,
+  "input_loss_db": null,
+  "notes": ""
+}

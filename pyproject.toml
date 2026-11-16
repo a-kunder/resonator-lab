@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "resonator-lab"
+version = "1.3.0"
+description = "Modular Siglent VNA power sweeps with a desktop GUI and complex data export"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.21", "matplotlib>=3.5", "pyvisa>=1.12"]
+
+[project.optional-dependencies]
+temperature = ["lakeshore>=1.10,<2"]
+pyvisa-py = ["pyvisa-py>=0.6", "pyusb>=1.2"]
+
+[project.scripts]
+resonator-lab = "resonator_lab.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["resonator_lab*"]
+
+[project.urls]
+Repository = "https://github.com/a-kunder/resonator-lab"
+Issues = "https://github.com/a-kunder/resonator-lab/issues"

@@ -1,0 +1,146 @@
+{
+  "batch_name": "Original nine resonators",
+  "resonators": [
+    {
+      "name": "Res1.1",
+      "sweep": {
+        "start_hz": 5929700000.0,
+        "stop_hz": 5954700000.0,
+        "points": 10001,
+        "averages": 7,
+        "if_bandwidth_hz": 1000,
+        "s_parameter": "S43",
+        "timeout_s": 1800,
+        "settle_s": 0.2
+      }
+    },
+    {
+      "name": "Res1.2",
+      "sweep": {
+        "start_hz": 6014800000.0,
+        "stop_hz": 6024800000.0,
+        "points": 10001,
+        "averages": 7,
+        "if_bandwidth_hz": 1000,
+        "s_parameter": "S43",
+        "timeout_s": 1800,
+        "settle_s": 0.2
+      }
+    },
+    {
+      "name": "Res2.1",
+      "sweep": {
+        "start_hz": 6206000000.0,
+        "stop_hz": 6246000000.0,
+        "points": 10001,
+        "averages": 7,
+        "if_bandwidth_hz": 1000,
+        "s_parameter": "S43",
+        "timeout_s": 1800,
+        "settle_s": 0.2
+      }
+    },
+    {
+      "name": "Res2.2",
+      "sweep": {
+        "start_hz": 6306800000.0,
+        "stop_hz": 6326800000.0,
+        "points": 10001,
+        "averages": 7,
+        "if_bandwidth_hz": 1000,
+        "s_parameter": "S43",
+        "timeout_s": 1800,
+        "settle_s": 0.2
+      }
+    },
+    {
+      "name": "Res3",
+      "sweep": {
+        "start_hz": 6678300000.0,
+        "stop_hz": 6680300000.0,
+        "points": 10001,
+        "averages": 7,
+        "if_bandwidth_hz": 1000,
+        "s_parameter": "S43",
+        "timeout_s": 1800,
+        "settle_s": 0.2
+      }
+    },
+    {
+      "name": "Res5",
+      "sweep": {
+        "start_hz": 6988600000.0,
+        "stop_hz": 6990200000.0,
+        "points": 10001,
+        "averages": 7,
+        "if_bandwidth_hz": 1000,
+        "s_parameter": "S43",
+        "timeout_s": 1800,
+        "settle_s": 0.2
+      }
+    },
+    {
+      "name": "Res6",
+      "sweep": {
+        "start_hz": 7057600000.0,
+        "stop_hz": 7057800000.0,
+        "points": 1001,
+        "averages": 7,
+        "if_bandwidth_hz": 100,
+        "s_parameter": "S43",
+        "timeout_s": 1800,
+        "settle_s": 0.2
+      }
+    },
+    {
+      "name": "Res7",
+      "sweep": {
+        "start_hz": 7468806400.0,
+        "stop_hz": 7468906400.0,
+        "points": 1001,
+        "averages": 7,
+        "if_bandwidth_hz": 100,
+        "s_parameter": "S43",
+        "timeout_s": 1800,
+        "settle_s": 0.2
+      }
+    },
+    {
+      "name": "Res8",
+      "sweep": {
+        "start_hz": 7979970000.0,
+        "stop_hz": 7980970000.0,
+        "points": 10001,
+        "averages": 7,
+        "if_bandwidth_hz": 1000,
+        "s_parameter": "S43",
+        "timeout_s": 1800,
+        "settle_s": 0.2
+      }
+    }
+  ],
+  "powers_dbm": [
+    -45,
+    -40,
+    -35,
+    -30,
+    -25,
+    -20,
+    -15,
+    -10,
+    -5,
+    0,
+    5,
+    10,
+    15,
+    20
+  ],
+  "temperatures_k": [
+    null
+  ],
+  "temperature_mode": "fixed",
+  "thermometry": {
+    "backend": "none"
+  },
+  "notes": "Frequency/IFBW/averages/points copied from notch_res_sweep.py. Shared VNA powers; no temperature connection."
+}

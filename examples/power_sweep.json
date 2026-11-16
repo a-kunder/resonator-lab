@@ -1,0 +1,31 @@
+{
+  "resonator": "Res1.1",
+  "sweep": {
+    "start_hz": 5929700000.0,
+    "stop_hz": 5954700000.0,
+    "points": 1001,
+    "if_bandwidth_hz": 1000.0,
+    "averages": 7,
+    "s_parameter": "S43",
+    "timeout_s": 1800.0,
+    "settle_s": 0.2
+  },
+  "powers_dbm": [
+    -45,
+    -40,
+    -35,
+    -30,
+    -25,
+    -20,
+    -15
+  ],
+  "temperatures_k": [
+    0.025
+  ],
+  "temperature_mode": "fixed",
+  "input_loss_db": null,
+  "notes": "Base power example with an unmeasured temperature label. Use base_batch_lsci_logs.json for read-only measured temperatures.",
+  "thermometry": {
+    "backend": "none"
+  }
+}

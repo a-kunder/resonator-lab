@@ -1,0 +1,59 @@
+{
+  "resonator": "Res1.1",
+  "sweep": {
+    "start_hz": 5929700000.0,
+    "stop_hz": 5954700000.0,
+    "points": 1001,
+    "if_bandwidth_hz": 1000.0,
+    "averages": 7,
+    "s_parameter": "S43",
+    "timeout_s": 1800.0,
+    "settle_s": 0.2
+  },
+  "powers_dbm": [
+    -45,
+    -40,
+    -35,
+    -30,
+    -25,
+    -20,
+    -15
+  ],
+  "temperatures_k": [
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.4,
+    0.6,
+    0.8
+  ],
+  "temperature_mode": "controlled",
+  "input_loss_db": null,
+  "notes": "INCOMPLETE TEMPLATE: enter confirmed Falkor values before use. No Snoopy wiring or heater limits are assumed.",
+  "temperature_tolerance_k": 0.002,
+  "temperature_timeout_s": 3600,
+  "thermometry": {
+    "backend": "lakeshore372",
+    "connection": "serial",
+    "com_port": "",
+    "baud_rate": 57600,
+    "io_timeout_s": 2,
+    "primary_channel": "",
+    "channels": []
+  },
+  "pid": {
+    "heater_output": null,
+    "heater_range": null,
+    "heater_resistance_ohm": null,
+    "max_heater_power_w": null,
+    "base_temperature_k": 0.02,
+    "max_temperature_k": 0.8,
+    "dwell_s": 600,
+    "poll_s": 5,
+    "cooldown_timeout_s": 7200,
+    "gain": null,
+    "integral": null,
+    "derivative": null
+  }
+}

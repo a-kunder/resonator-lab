@@ -1,0 +1,166 @@
+{
+  "resonator": "Res1.1",
+  "notes": "",
+  "s_parameter": "S43",
+  "power_index": 2,
+  "temperature_index": 1,
+  "vna_power_requested_dbm": -15.0,
+  "vna_power_readback_dbm": -15.0,
+  "input_loss_db": null,
+  "estimated_device_power_dbm": null,
+  "temperature_mode": "controlled",
+  "temperature_target_k": 0.1,
+  "temperature_label_k": null,
+  "temperature_stability_before": {
+    "stable_s": 1785.2056487999996,
+    "required_s": 600.0,
+    "tolerance_k": 0.002,
+    "samples_in_band": 99
+  },
+  "temperature_acquisition_summary": {
+    "target_k": 0.1,
+    "sample_count_during_acquisition": 10,
+    "minimum_k": 0.1,
+    "maximum_k": 0.1,
+    "samples_within_tolerance": true,
+    "monitor_error": null,
+    "interpretation": "Sampled temperatures, not a guarantee between readings."
+  },
+  "temperature_snapshot_before": {
+    "source": "lakeshore372",
+    "started_utc": "2026-11-13T01:20:31.204345+00:00",
+    "primary_channel": "A",
+    "channels": {
+      "A": {
+        "read_started_utc": "2026-11-13T01:20:31.204372+00:00",
+        "read_ended_utc": "2026-11-13T01:20:31.204377+00:00",
+        "kelvin": 0.1,
+        "sensor_conversion_time_utc": null,
+        "resistance_ohm": 1000.0,
+        "excitation_power_w": 1e-12,
+        "quadrature_ohm": 0.0
+      }
+    },
+    "connection": {
+      "backend": "lakeshore372",
+      "connection": "serial",
+      "com_port": "SIMULATED",
+      "ip_address": "",
+      "tcp_port": 7777,
+      "baud_rate": 57600,
+      "io_timeout_s": 2.0,
+      "primary_channel": "A",
+      "channels": [
+        "A"
+      ]
+    },
+    "freshness": "Bridge readout; sensor conversion age is not provided or verified.",
+    "simulated": true,
+    "scanner": {
+      "active_channel": "1",
+      "auto_scan": false
+    },
+    "primary_kelvin": 0.1,
+    "ended_utc": "2026-11-13T01:20:31.204382+00:00",
+    "pid": {
+      "target_k": 0.1,
+      "heater_range_readback": 1,
+      "output_mode_readback": 5,
+      "heater_output": 0,
+      "configured_range": 1,
+      "effective_pid": {
+        "gain": 10.0,
+        "integral": 10.0,
+        "derivative": 0.0
+      },
+      "control_owned": true
+    },
+    "stability": {
+      "stable_s": 1785.2056487999996,
+      "required_s": 600.0,
+      "tolerance_k": 0.002,
+      "samples_in_band": 99
+    }
+  },
+  "temperature_snapshot_after": {
+    "source": "lakeshore372",
+    "started_utc": "2026-11-13T01:20:31.364711+00:00",
+    "primary_channel": "A",
+    "channels": {
+      "A": {
+        "read_started_utc": "2026-11-13T01:20:31.364743+00:00",
+        "read_ended_utc": "2026-11-13T01:20:31.364750+00:00",
+        "kelvin": 0.1,
+        "sensor_conversion_time_utc": null,
+        "resistance_ohm": 1000.0,
+        "excitation_power_w": 1e-12,
+        "quadrature_ohm": 0.0
+      }
+    },
+    "connection": {
+      "backend": "lakeshore372",
+      "connection": "serial",
+      "com_port": "SIMULATED",
+      "ip_address": "",
+      "tcp_port": 7777,
+      "baud_rate": 57600,
+      "io_timeout_s": 2.0,
+      "primary_channel": "A",
+      "channels": [
+        "A"
+      ]
+    },
+    "freshness": "Bridge readout; sensor conversion age is not provided or verified.",
+    "simulated": true,
+    "scanner": {
+      "active_channel": "1",
+      "auto_scan": false
+    },
+    "primary_kelvin": 0.1,
+    "ended_utc": "2026-11-13T01:20:31.364756+00:00",
+    "pid": {
+      "target_k": 0.1,
+      "heater_range_readback": 1,
+      "output_mode_readback": 5,
+      "heater_output": 0,
+      "configured_range": 1,
+      "effective_pid": {
+        "gain": 10.0,
+        "integral": 10.0,
+        "derivative": 0.0
+      },
+      "control_owned": true
+    },
+    "stability": {
+      "stable_s": 2362.5761975999994,
+      "required_s": 600.0,
+      "tolerance_k": 0.002,
+      "samples_in_band": 110
+    }
+  },
+  "temperature_read_error_after": null,
+  "temperature_logging_enabled": true,
+  "temperature_before_k": 0.1,
+  "temperature_after_k": 0.1,
+  "temperature_within_tolerance": true,
+  "acquisition_started_utc": "2026-11-13T01:20:31.204504+00:00",
+  "acquisition_ended_utc": "2026-11-13T01:20:31.364703+00:00",
+  "effective_settings": {
+    "start_hz": 5929700000.0,
+    "stop_hz": 5954700000.0,
+    "points": 101,
+    "if_bandwidth_hz": 1000.0,
+    "averages": 7,
+    "s_parameter": "S43",
+    "timeout_s": 1800.0,
+    "settle_s": 0.0,
+    "frequency_axis": "simulated linear axis"
+  },
+  "instrument_identity": "SIMULATOR,ResonatorLab,0,1.0",
+  "simulated": true,
+  "schema_version": "1.1",
+  "run_id": "20261113T012030_049797Z_Res1.1_e173f88a",
+  "trace_index": 5,
+  "npz": "traces/trace_00005.npz",
+  "csv": "traces/trace_00005.csv"
+}
