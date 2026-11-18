@@ -1,7 +1,7 @@
 {
   "map_version": 1,
   "name": "resonator-lab",
-  "application_version": "1.3.0",
+  "application_version": "1.4.0",
   "repository": "https://github.com/a-kunder/resonator-lab",
   "language": "Python",
   "python_requires": ">=3.9",
@@ -9,7 +9,9 @@
     "power_batches": "implemented; physical VNA validation pending",
     "log_thermometry": "implemented; actual lab log validation pending",
     "physical_temperature_control": "disabled; owner-mediated adapter pending",
-    "q_fitting": "not implemented"
+    "q_fitting": "not implemented",
+    "power_dependent_ifbw": "implemented; power-keyed per resonator; physical readback validation pending",
+    "input_attenuation": "editable room/cold fields with nominal estimates; Line D preset provided"
   },
   "commands": {
     "install": "python -m pip install -e .",
@@ -114,6 +116,10 @@
     {
       "path": "docs/CI.md",
       "purpose": "Optional CI workflow template and activation"
+    },
+    {
+      "path": "docs/POWER_IFBW_AND_ATTENUATION.md",
+      "purpose": "Power-dependent bandwidths, attenuation and Line D record"
     }
   ],
   "data": {

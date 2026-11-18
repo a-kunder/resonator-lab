@@ -6,6 +6,5 @@ if not exist ".venv\Scripts\python.exe" (
   pause
   exit /b 1
 )
-".venv\Scripts\python.exe" -m visa info
 ".venv\Scripts\python.exe" diagnose.py
 pause

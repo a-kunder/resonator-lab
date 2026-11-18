@@ -21,7 +21,7 @@ if errorlevel 1 goto failed
 ".venv\Scripts\python.exe" -m unittest discover -s tests -v
 if errorlevel 1 goto failed
 echo.
-echo Setup complete. Double-click launch_windows.bat to open Resonator Lab.
+echo Setup complete. Double-click launch_power_windows.bat to open Resonator Lab.
 echo Hardware requires NI-VISA or Keysight IO Libraries. See WINDOWS_SETUP.md.
 pause
 exit /b 0

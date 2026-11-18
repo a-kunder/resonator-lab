@@ -127,6 +127,9 @@ class SiglentVNA(VNA):
             's_parameter': settings.s_parameter,
             'frequency_axis': 'linear axis reconstructed from instrument readbacks',
         }
+        bandwidth = self.effective['if_bandwidth_hz']
+        if not np.isfinite(bandwidth) or not np.isclose(bandwidth, settings.if_bandwidth_hz, rtol=1e-6, atol=0):
+            raise RuntimeError('VNA IF bandwidth readback {} Hz differs from requested {} Hz.'.format(bandwidth, settings.if_bandwidth_hz))
         if self.effective['averages'] != settings.averages or self.effective['averaging_enabled'] != (settings.averages > 1):
             raise RuntimeError('VNA did not accept the requested averaging settings.')
         return dict(self.effective)

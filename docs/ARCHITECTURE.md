@@ -3,7 +3,8 @@
 ## Supported workflows
 
 - Power sweeps for one or multiple resonators, sharing one ordered power list.
-- Per-resonator frequency bounds, IFBW, averages, point count, S-parameter and timing.
+- Per-resonator frequency bounds, base/power-specific IFBW, averages, point count, S-parameter and timing.
+- Separate room/cold attenuation metadata and nominal device-power estimates.
 - Optional read-only CH temperature log recording from LSCI Reader files.
 - Temperature list generation by count or step and simulated temperature batches.
 
@@ -31,7 +32,7 @@ Physical automated temperature control and Qi/Qc fitting are future work. Siglen
 1. Validate config and establish the selected devices.
 2. Create a run folder and record config/instrument metadata.
 3. For each temperature, run each resonator with RF off during reconfiguration.
-4. For each shared power: set/read back power, settle, read temperature, acquire one complete averaged trace, read temperature again and save.
+4. For each shared power: resolve its IFBW override, reconfigure with RF off if needed, verify bandwidth readback, set/read back power, settle, read temperature, acquire one complete averaged trace, read temperature again and save.
 5. Save acquired data even if the subsequent temperature read fails; then stop and record the error.
 6. Disable RF, close resources and finalize run status on success, cancellation or failure.
 

@@ -1,17 +1,19 @@
+Version 1.4 adds per-power IFBW and separate room/cold attenuation controls. See [the guide](docs/POWER_IFBW_AND_ATTENUATION.md).
+
 Version 1.3 adds optional read-only CH6 T logging in the base-power GUI. See [TEMPERATURE_LOGS.md](TEMPERATURE_LOGS.md). The no-thermometry instructions below apply when logging is disabled.
 
 # Base-temperature VNA power sweeps
 
 Version 1.2 supports a batch of resonators with shared powers. See [BATCH_SWEEPS.md](BATCH_SWEEPS.md). Click **Update selected** after changing a queued resonator, or **Add to batch** to add a different resonator. **Load original 9** loads all the original frequency windows/settings.
 
-This workflow only connects to the VNA. It does not open COM3, connect to the Lake Shore, change a setpoint, or change the LSCI Reader's heater/PID state. Temperature integration is deferred. The temperature value is saved as null unless you explicitly supply an unmeasured label in the general GUI/config.
+This workflow only connects to the VNA. It does not open COM3, connect to the Lake Shore, change a setpoint, or change the LSCI Reader's heater/PID state. Optional read-only temperature-log integration is available; physical temperature control remains deferred. The temperature value is saved as null unless you explicitly supply an unmeasured label in the general GUI/config.
 
 ## Windows
 
 1. Extract the whole application ZIP into a writable folder.
 2. Run `setup_windows.bat` to install the Python package and dependencies. A working VISA runtime is needed for the real VNA.
 3. Run **launch_power_windows.bat** for the simplified power-only GUI.
-4. Select **Siglent SNA5000A**, click **Find VISA instruments**, and enter/select the exact VNA resource address. The supplied address is the one from your original wrapper; verify it matches the connected instrument.
+4. Select **Siglent SNA5000A**, click **Find VISA instruments**, and enter/select the exact VNA resource address. The address starts blank; copy the exact Siglent resource from discovery.
 5. Enter your resonator's frequency window, S-parameter, IF bandwidth, points, averages and output power sequence. Choose the output folder in the scrollable settings pane.
 6. Start with one trace at a suitable low power to check communication, averaging and agreement with the VNA display. Hardware acquisition/correction semantics have not yet been tested on your instrument.
 7. Run the full sequence. Each completed trace is saved as complex NPZ + CSV + metadata JSON. RF is turned off during final cleanup.

@@ -7,12 +7,13 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from .model import ExperimentConfig, SweepSettings, ResonatorConfig, sequence, stepped_sequence
+from .model import ExperimentConfig, SweepSettings, ResonatorConfig, PowerIFBandwidth, sequence, stepped_sequence
 from .instruments import DEFAULT_ADDRESS, SiglentVNA, SimulatedVNA
 from .experiment import ResonatorPowerSweep
 from .thermometry import ThermometrySettings, PIDSettings
 from .devices import create_temperature_devices
 import time
+import math
 from collections import deque
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -78,6 +79,8 @@ class ResonatorApp:
         self.field(res, 'Stop frequency (GHz)', 'stop_ghz', '5.9547')
         self.field(res, 'Frequency points', 'points', '1001')
         self.field(res, 'IF bandwidth (Hz)', 'if_bandwidth_hz', '1000')
+        self.field(res, 'Power:IFBW overrides (dBm:Hz; optional)', 'power_if_bandwidths', '')
+        ttk.Label(res, text='Example: -45:100, -35:300, -20:1000. Unlisted powers use the base IFBW above. Edit rows in the Power IFBW tab.', style='Hint.TLabel', wraplength=325).pack(anchor='w')
         self.field(res, 'Averages per trace', 'averages', '7')
         self.field(res, 'Acquisition timeout (s)', 'timeout_s', '1800')
         self.field(res, 'Power settling time (s)', 'settle_s', '0.2')
@@ -95,7 +98,20 @@ class ResonatorApp:
         self.field(power, 'Number of powers', 'power_count', '7')
         self.field(power, 'Or explicit list (dBm)', 'power_list', '')
         ttk.Label(power, text='Comma-separated list overrides start/stop/count.\nOrder is preserved, including descending sweeps.', style='Hint.TLabel', wraplength=325).pack(anchor='w')
-        self.field(power, 'Input path loss (dB, optional)', 'input_loss_db', '')
+        attenuation = self.section(form, 'Input attenuation · metadata only')
+        self.field(attenuation, 'Input line / label', 'input_line', '')
+        self.field(attenuation, 'Room-temperature input attenuation (dB)', 'room_temperature_attenuation_db', '')
+        self.field(attenuation, 'Cold input attenuation (dB)', 'cold_attenuation_db', '')
+        self.field(attenuation, 'Attenuation notes / stage breakdown', 'attenuation_notes', '')
+        self.field(attenuation, 'Legacy total loss (dB; alternative to components)', 'input_loss_db', '')
+        self.attenuation_status = tk.StringVar(value='Total attenuation unknown until both components are entered.')
+        ttk.Label(attenuation, textvariable=self.attenuation_status, style='Hint.TLabel', wraplength=325).pack(anchor='w')
+        preset = ttk.Button(attenuation, text='Load Line D: RT 20 dB + cold 43 dB', command=self.load_line_d_attenuation)
+        preset.pack(fill='x', pady=4)
+        self.profile_widgets.append(preset)
+        ttk.Label(attenuation, text='Editable nominal losses. Device power = VNA readback minus total attenuation. Cable/connector losses are excluded unless included in your values. Use components OR the legacy total.', style='Hint.TLabel', wraplength=325).pack(anchor='w')
+        for key in ('room_temperature_attenuation_db', 'cold_attenuation_db', 'input_loss_db'):
+            self.vars[key].trace_add('write', self.update_attenuation_status)
         temp = self.section(form, '4  Temperature and experiment mode')
         self.field(temp, 'Experiment mode', 'temperature_mode', 'Power sweep at one temperature',
                    ['Power sweep at one temperature', 'Temperature × power sweep'])
@@ -195,6 +211,7 @@ class ResonatorApp:
         self.notebook.add(trace_page, text='VNA traces')
         self.notebook.add(temperature_page, text='Temperature history')
         self.build_temperature_planner()
+        self.build_power_ifbw_page()
         plot_controls = ttk.Frame(trace_page)
         plot_controls.pack(fill='x', pady=4)
         ttk.Label(plot_controls, text='Plot resonator:').pack(side='left', padx=5)
@@ -232,7 +249,7 @@ class ResonatorApp:
         self.root.protocol('WM_DELETE_WINDOW', self.close)
         self.root.after(100, self.poll)
         self.set_batch([self.editor_resonator()])
-        for key in ('resonator', 's_parameter', 'start_ghz', 'stop_ghz', 'points', 'if_bandwidth_hz', 'averages', 'timeout_s', 'settle_s'):
+        for key in ('resonator', 's_parameter', 'start_ghz', 'stop_ghz', 'points', 'if_bandwidth_hz', 'averages', 'timeout_s', 'settle_s', 'power_if_bandwidths'):
             self.vars[key].trace_add('write', self.mark_editor_state)
         self.update_temperature_generator()
 
@@ -270,6 +287,112 @@ class ResonatorApp:
         ttk.Label(self.batch_page, text='Select a row to edit its settings on the left. Click Update selected to apply edits, or give it a new name and Add to batch. Shared powers are below the editor. Trace timeout and settling time are also per resonator.',
                   style='Hint.TLabel', wraplength=730).pack(anchor='w', pady=5)
         ttk.Label(self.batch_page, textvariable=self.queue_info, wraplength=730).pack(anchor='w')
+
+    def build_power_ifbw_page(self):
+        page = ttk.Frame(self.notebook, padding=12)
+        self.notebook.add(page, text='Power IFBW')
+        ttk.Label(page, text='IF bandwidth for each power', style='Title.TLabel').pack(anchor='w')
+        ttk.Label(page, text='Editing resonator:').pack(anchor='w', pady=(8, 0))
+        ttk.Label(page, textvariable=self.vars['resonator']).pack(anchor='w')
+        ttk.Label(page, text='Select one or several power rows and enter an IFBW in Hz. Unspecified powers use this resonator’s base IFBW. Click Update selected in the resonator editor to apply changes to the batch.', style='Hint.TLabel', wraplength=700).pack(anchor='w', pady=8)
+        holder = ttk.Frame(page)
+        holder.pack(fill='both', expand=True)
+        self.power_ifbw_tree = ttk.Treeview(holder, columns=('power', 'ifbw', 'source'), show='headings', selectmode='extended', height=10)
+        for key, label in [('power', 'VNA power (dBm)'), ('ifbw', 'Requested IFBW (Hz)'), ('source', 'Source')]:
+            self.power_ifbw_tree.heading(key, text=label)
+            self.power_ifbw_tree.column(key, width=180)
+        self.power_ifbw_tree.pack(side='left', fill='both', expand=True)
+        scroll = ttk.Scrollbar(holder, orient='vertical', command=self.power_ifbw_tree.yview)
+        scroll.pack(side='right', fill='y')
+        self.power_ifbw_tree.configure(yscrollcommand=scroll.set)
+        self.field(page, 'IFBW to apply to selected rows (Hz)', 'schedule_ifbw_hz', '100')
+        row = ttk.Frame(page)
+        row.pack(fill='x', pady=6)
+        for label, command in [('Refresh powers', self.refresh_power_ifbw), ('Set selected IFBW', self.apply_power_ifbw), ('Reset overrides to base', self.reset_power_ifbw)]:
+            button = ttk.Button(row, text=label, command=command)
+            button.pack(side='left', padx=3)
+            self.profile_widgets.append(button)
+        ttk.Label(page, text='After changing the shared power list, click Refresh powers. Overrides are keyed by power, so reordering keeps their meaning. Remove overrides for deleted powers before Start. Lower IFBW can require a longer acquisition timeout.', style='Hint.TLabel', wraplength=700).pack(anchor='w', pady=8)
+
+    @staticmethod
+    def parse_ifbw_overrides(text):
+        if not text.strip():
+            return []
+        result = []
+        for token in text.split(','):
+            fields = token.split(':')
+            if len(fields) != 2:
+                raise ValueError('Use power:IFBW pairs, e.g. -45:100, -35:300 (dBm:Hz).')
+            item = PowerIFBandwidth(float(fields[0]), float(fields[1]))
+            item.validate()
+            result.append(item)
+        if len({item.power_dbm for item in result}) != len(result):
+            raise ValueError('Duplicate powers in the IFBW schedule.')
+        return result
+
+    def shared_powers(self):
+        v = lambda key: self.vars[key].get().strip()
+        return self.parse_list(v('power_list')) if v('power_list') else sequence(float(v('power_start')), float(v('power_stop')), int(v('power_count')))
+
+    def refresh_power_ifbw(self, show_error=True):
+        try:
+            entry = self.editor_resonator()
+            powers = self.shared_powers()
+            self.power_ifbw_tree.delete(*self.power_ifbw_tree.get_children())
+            overridden = {item.power_dbm for item in entry.power_if_bandwidths}
+            for i, power in enumerate(powers):
+                self.power_ifbw_tree.insert('', 'end', iid=str(i), values=(power, entry.sweep_for_power(power).if_bandwidth_hz, 'Override' if power in overridden else 'Base IFBW'))
+        except Exception as exc:
+            if show_error:
+                messagebox.showerror('Power IFBW', str(exc))
+
+    def apply_power_ifbw(self):
+        try:
+            selected = self.power_ifbw_tree.selection()
+            if not selected:
+                raise ValueError('Select at least one power row.')
+            value = float(self.vars['schedule_ifbw_hz'].get())
+            overrides = {item.power_dbm: item.if_bandwidth_hz for item in self.parse_ifbw_overrides(self.vars['power_if_bandwidths'].get())}
+            for row in selected:
+                power = float(self.power_ifbw_tree.item(row, 'values')[0])
+                PowerIFBandwidth(power, value).validate()
+                overrides[power] = value
+            self.vars['power_if_bandwidths'].set(', '.join('{}:{}'.format(power, bandwidth) for power, bandwidth in overrides.items()))
+            self.refresh_power_ifbw()
+        except Exception as exc:
+            messagebox.showerror('Power IFBW', str(exc))
+
+    def reset_power_ifbw(self):
+        self.vars['power_if_bandwidths'].set('')
+        self.refresh_power_ifbw()
+
+    def load_line_d_attenuation(self):
+        self.vars['input_loss_db'].set('')
+        self.vars['input_line'].set('D')
+        self.vars['room_temperature_attenuation_db'].set('20')
+        self.vars['cold_attenuation_db'].set('43')
+        self.vars['attenuation_notes'].set('Cold: 4 K 20 dB + cold plate 3 dB + MXC 20 dB. Room-temperature value editable; cable/connector loss not measured.')
+
+    def update_attenuation_status(self, *unused):
+        try:
+            room, cold, legacy = (self.vars[key].get().strip() for key in ('room_temperature_attenuation_db', 'cold_attenuation_db', 'input_loss_db'))
+            if legacy and (room or cold):
+                raise ValueError('Use components OR legacy total; clear the other fields.')
+            if room and cold:
+                values = [float(room), float(cold)]
+                if not all(math.isfinite(value) and value >= 0 for value in values):
+                    raise ValueError('Attenuations must be finite and nonnegative.')
+                message = 'Nominal total: {:g} dB (RT {:g} + cold {:g}).'.format(sum(values), *values)
+            elif legacy:
+                value = float(legacy)
+                if not math.isfinite(value) or value < 0:
+                    raise ValueError('Attenuation must be finite and nonnegative.')
+                message = 'Legacy total: {:g} dB.'.format(value)
+            else:
+                message = 'Total unknown: enter both room and cold values (0 if none).'
+            self.attenuation_status.set(message)
+        except ValueError as exc:
+            self.attenuation_status.set(str(exc))
 
     def build_temperature_planner(self):
         page = ttk.Frame(self.notebook, padding=12)
@@ -311,7 +434,8 @@ class ResonatorApp:
             start_hz=float(Decimal(v('start_ghz')) * Decimal('1e9')), stop_hz=float(Decimal(v('stop_ghz')) * Decimal('1e9')),
             points=int(v('points')), if_bandwidth_hz=float(v('if_bandwidth_hz')),
             averages=int(v('averages')), s_parameter=v('s_parameter'),
-            timeout_s=float(v('timeout_s')), settle_s=float(v('settle_s'))))
+            timeout_s=float(v('timeout_s')), settle_s=float(v('settle_s'))),
+            self.parse_ifbw_overrides(v('power_if_bandwidths')) if 'power_if_bandwidths' in self.vars else [])
         entry.validate()
         return entry
 
@@ -320,10 +444,14 @@ class ResonatorApp:
         fields = dict(resonator=entry.name, start_ghz=str((Decimal(str(s.start_hz)) / Decimal('1e9')).normalize()),
                       stop_ghz=str((Decimal(str(s.stop_hz)) / Decimal('1e9')).normalize()), points=str(s.points),
                       if_bandwidth_hz=str(s.if_bandwidth_hz), averages=str(s.averages),
-                      s_parameter=s.s_parameter, timeout_s=str(s.timeout_s), settle_s=str(s.settle_s))
+                      s_parameter=s.s_parameter, timeout_s=str(s.timeout_s), settle_s=str(s.settle_s),
+                      power_if_bandwidths=', '.join('{}:{}'.format(item.power_dbm, item.if_bandwidth_hz) for item in entry.power_if_bandwidths))
         for key, value in fields.items():
-            self.vars[key].set(value)
+            if key in self.vars:
+                self.vars[key].set(value)
         self.mark_editor_state()
+        if hasattr(self, 'power_ifbw_tree'):
+            self.refresh_power_ifbw(show_error=False)
 
     def set_batch(self, entries, name=None):
         entries = [ResonatorConfig.from_dict(entry.to_dict()) for entry in entries]
@@ -344,7 +472,7 @@ class ResonatorApp:
             s = entry.sweep
             self.batch_tree.insert('', 'end', iid=str(i), values=(i + 1, entry.name,
                 '{:.9g}'.format(s.start_hz / 1e9), '{:.9g}'.format(s.stop_hz / 1e9),
-                s.if_bandwidth_hz, s.averages, s.points, s.s_parameter))
+                '{}{}'.format(s.if_bandwidth_hz, ' + overrides' if entry.power_if_bandwidths else ''), s.averages, s.points, s.s_parameter))
         if self.batch:
             self.selected_batch_index = min(self.selected_batch_index or 0, len(self.batch) - 1)
             self.batch_tree.selection_set(str(self.selected_batch_index))
@@ -438,6 +566,9 @@ class ResonatorApp:
         self.vars['power_stop'].set(str(config.powers_dbm[-1]))
         self.vars['power_count'].set(str(len(config.powers_dbm)))
         self.vars['input_loss_db'].set('' if config.input_loss_db is None else str(config.input_loss_db))
+        for key in ('room_temperature_attenuation_db', 'cold_attenuation_db', 'input_line', 'attenuation_notes'):
+            value = getattr(config, key)
+            self.vars[key].set('' if value is None else str(value))
         self.vars['notes'].set(config.notes)
         self.vars['temperature_mode'].set('Temperature × power sweep' if len(config.temperatures_k) > 1 else 'Power sweep at one temperature')
         self.vars['regulate'].set('Yes' if config.temperature_mode == 'controlled' else 'No (read temperatures only)')
@@ -521,7 +652,7 @@ class ResonatorApp:
             if temp is None:
                 temp = m.get('temperature_target_k') if m['temperature_mode'] == 'controlled' else m.get('temperature_label_k')
             temperature_text = 'base' if temp is None else '{:.4g} mK'.format(temp * 1000)
-            label = '{:g} dBm · {}'.format(m['vna_power_readback_dbm'], temperature_text)
+            label = '{:g} dBm · {} · {:g} Hz'.format(m['vna_power_readback_dbm'], temperature_text, m['effective_settings']['if_bandwidth_hz'])
             line, = self.ax_mag.plot(trace.frequency_hz / 1e9, trace.magnitude_db, label=label, linewidth=1)
             self.ax_phase.plot(trace.frequency_hz / 1e9, trace.phase_rad, color=line.get_color(), linewidth=1)
         simulated = traces[-1].metadata['simulated'] if traces else self.vars['backend'].get() == 'Simulator'
@@ -606,11 +737,17 @@ class ResonatorApp:
             temperature_timeout_s=3600 if self.power_only else float(v('temperature_timeout_min')) * 60,
             thermometry=thermal, pid=pid,
             input_loss_db=optional_float('input_loss_db'), notes=v('notes'))
+        c.power_if_bandwidths = self.editor_resonator().power_if_bandwidths
+        for key in ('room_temperature_attenuation_db', 'cold_attenuation_db'):
+            setattr(c, key, optional_float(key) if key in self.vars else None)
+        c.input_line = v('input_line') if 'input_line' in self.vars else ''
+        c.attenuation_notes = v('attenuation_notes') if 'attenuation_notes' in self.vars else ''
         if getattr(self, 'batch', []):
             self.ensure_editor_applied()
             c.batch_name = v('batch_name')
             c.resonators = [ResonatorConfig.from_dict(r.to_dict()) for r in self.batch]
             c.resonator, c.sweep = c.resonators[0].name, c.resonators[0].sweep
+            c.power_if_bandwidths = list(c.resonators[0].power_if_bandwidths)
         c.validate()
         if not v('output_root'):
             raise ValueError('Choose an output folder.')
@@ -699,7 +836,7 @@ class ResonatorApp:
             filename = filedialog.asksaveasfilename(defaultextension='.json', filetypes=[('Settings', '*.json')])
             if filename:
                 with open(filename, 'w', encoding='utf-8') as stream:
-                    json.dump({'gui_schema_version': 3, 'fields': {k: v.get() for k, v in self.vars.items()}, 'resonators': [r.to_dict() for r in self.batch], 'selected_resonator': self.selected_batch_index}, stream, indent=2)
+                    json.dump({'gui_schema_version': 4, 'fields': {k: v.get() for k, v in self.vars.items()}, 'resonators': [r.to_dict() for r in self.batch], 'selected_resonator': self.selected_batch_index}, stream, indent=2)
         except Exception as exc:
             messagebox.showerror('Settings', str(exc))
 
@@ -713,7 +850,7 @@ class ResonatorApp:
             if 'gui_schema_version' not in data:
                 self.apply_experiment_config(ExperimentConfig.from_dict(data))
                 return
-            if data.get('gui_schema_version') not in (1, 2, 3):
+            if data.get('gui_schema_version') not in (1, 2, 3, 4):
                 raise ValueError('Select a GUI settings profile saved with Save settings.')
             if data.get('gui_schema_version') == 1:
                 fields = data['fields']
@@ -733,6 +870,9 @@ class ResonatorApp:
             old_batch = list(self.batch)
             old_selected = self.selected_batch_index
             try:
+                for key in ('room_temperature_attenuation_db', 'cold_attenuation_db', 'input_line', 'attenuation_notes', 'power_if_bandwidths'):
+                    if key not in data['fields']:
+                        self.vars[key].set('')
                 for key, value in data['fields'].items():
                     if key in self.vars:
                         self.vars[key].set(str(value))

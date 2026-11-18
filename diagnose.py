@@ -21,13 +21,5 @@ except Exception as exc:
     print('VISA unavailable:', exc)
     print('Install NI-VISA or Keysight IO Libraries for hardware. Simulator does not require a VISA runtime.')
 
-try:
-    from importlib.metadata import version
-    from serial.tools import list_ports
-    print('Lake Shore driver:', version('lakeshore'))
-    print('Serial ports (enumeration only; none opened):')
-    for port in list_ports.comports():
-        print(' ', port.device, '-', port.description)
-except Exception as exc:
-    print('Lake Shore/serial diagnostics unavailable:', exc)
-    print('For thermometry, rerun setup or install the temperature extra. No Lake Shore connection was attempted.')
+print('Temperature recording: reads existing LSCI log files; no serial/Lake Shore driver required.')
+print('LSCI Reader retains ownership; no thermometer port was opened.')

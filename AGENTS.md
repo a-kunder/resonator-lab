@@ -23,7 +23,8 @@ This directory is the standalone `a-kunder/resonator-lab` repository. Read READM
 ## Code and data contracts
 
 - Keep GUI, orchestration, instrument transport and storage modular. Tk widgets stay on the GUI thread; blocking I/O stays on workers.
-- Acquisition order is temperature -> resonator -> power. Powers are shared; each resonator owns its frequency grid, IFBW, averaging and acquisition timing.
+- Acquisition order is temperature -> resonator -> power. Powers are shared; each resonator owns its frequency grid, IFBW, averaging and acquisition timing. Per-power IFBW overrides are keyed to the numeric power, not list index; reconfigure with RF off and record requested/readback settings.
+- Room/cold attenuation components must both be known before estimating device power. Do not mix those components with the legacy total or treat an unknown component as zero. Attenuation is metadata; do not alter raw complex samples.
 - Save raw complex S-parameters without normalization/phase removal. Units belong in field names: Hz, K, dBm, seconds.
 - Maintain backward-compatible reads of existing schema versions. Document any data/config migration. Null temperature means unmeasured; a temperature label is not a measurement.
 - Preserve completed traces on cancellation/errors, turn VNA RF off during cleanup, and never retrigger acquisition while saving an already acquired trace.

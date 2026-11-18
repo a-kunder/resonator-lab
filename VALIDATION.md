@@ -1,3 +1,13 @@
+# Version 1.4 validation — 2026-11-17
+
+- All 60 automated tests passed with Python 3.11 in 12.622 seconds. Nine new tests cover power-keyed IFBW schedules, reordering/base fallback, invalid/deleted override powers, legacy and component attenuation semantics, nested temperature/resonator/power metadata, RF-off reconfiguration, failed reconfiguration preserving completed data, GUI parser/Line D preset, and rejection of unaccepted instrument IFBW readback.
+- Local Tk smoke test passed: power-table row editing, unapplied-change guard, GUI profile v4 save/load, power reordering, Line D preset (63 dB total), and simulated 3-trace acquisition with IFBW [1000, 300, 10] Hz and estimated device powers [-83, -98, -108] dBm.
+- Complete example `line_d_power_ifbw.json` ran in CLI simulation: 2 resonators x 3 powers, completed with no cleanup errors.
+- User-provided Windows screenshots show the earlier v1.3 setup passed 51 tests on the lab PC, and the VISA backend enumerated the Siglent resource. They also exposed the obsolete `-m visa info` command and irrelevant optional serial-driver advice, corrected here. No physical trace/calibration/IFBW acceptance check is claimed.
+- Raw array schema remains 1.2 with additive metadata; old inputs/data remain covered by regression tests. GUI profiles v1-v3 still load; new saves use v4.
+
+---
+
 # Version 1.3 validation — 2026-11-16
 
 - 51 automated tests passed with Python 3.11 (9.306 seconds), including all prior acquisition, batch and ownership tests plus nine log-reader tests.

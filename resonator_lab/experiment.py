@@ -1,4 +1,5 @@
 """Reusable experiment orchestration, independent of GUI or instrument transport."""
+from dataclasses import asdict
 import math
 import threading
 import time
@@ -58,12 +59,19 @@ class ResonatorPowerSweep:
                     check_cancel(cancel)
                     self.vna.set_output(False)
                     emit('status', 'Configuring {} ({}/{})'.format(resonator.name, ri + 1, len(config.resonator_plan)))
-                    effective = self.vna.configure(resonator.sweep)
-                    store.record_configuration(ti, ri, resonator, effective)
+                    configured_sweep = resonator.sweep_for_power(config.powers_dbm[0])
+                    effective = self.vna.configure(configured_sweep)
+                    store.record_configuration(ti, ri, resonator, effective, power_index=0, requested_sweep=asdict(configured_sweep))
                     emit('resonator', {'name': resonator.name, 'index': ri, 'temperature_index': ti,
                                       'effective_settings': dict(effective)})
                     for pi, requested in enumerate(config.powers_dbm):
                         check_cancel(cancel)
+                        requested_sweep = resonator.sweep_for_power(requested)
+                        if requested_sweep != configured_sweep:
+                            self.vna.set_output(False)
+                            effective = self.vna.configure(requested_sweep)
+                            configured_sweep = requested_sweep
+                            store.record_configuration(ti, ri, resonator, effective, power_index=pi, requested_sweep=asdict(requested_sweep))
                         actual = self.vna.set_power(requested)
                         self.vna.set_output(True)
                         temperature_text = ('base (read-only temperature log)' if self.reader is not None else 'base (temperature not measured)') if target is None else '{:.6g} K'.format(target)
@@ -111,8 +119,16 @@ class ResonatorPowerSweep:
                             'power_index': pi, 'temperature_index': ti,
                             'vna_power_requested_dbm': requested,
                             'vna_power_readback_dbm': actual,
-                            'input_loss_db': config.input_loss_db,
-                            'estimated_device_power_dbm': None if config.input_loss_db is None else actual - config.input_loss_db,
+                            'input_loss_db': config.total_input_loss_db,
+                            'room_temperature_attenuation_db': config.room_temperature_attenuation_db,
+                            'cold_attenuation_db': config.cold_attenuation_db,
+                            'input_line': config.input_line,
+                            'attenuation_notes': config.attenuation_notes,
+                            'device_power_estimate_basis': 'VNA power readback minus declared nominal attenuation; unmeasured cable/connector losses excluded.',
+                            'estimated_device_power_dbm': None if config.total_input_loss_db is None else actual - config.total_input_loss_db,
+                            'requested_settings': asdict(requested_sweep),
+                            'if_bandwidth_requested_hz': requested_sweep.if_bandwidth_hz,
+                            'if_bandwidth_readback_hz': effective['if_bandwidth_hz'],
                             'temperature_mode': config.temperature_mode,
                             'temperature_target_k': target if config.temperature_mode == 'controlled' else None,
                             'temperature_label_k': target if config.temperature_mode == 'fixed' else None,

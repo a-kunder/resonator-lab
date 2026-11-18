@@ -2,7 +2,7 @@
 
 ## Experiment input
 
-Input is UTF-8 JSON accepted by `ExperimentConfig.from_dict()`. Runtime validation in model.py is authoritative, including cross-field constraints. Unknown dataclass keys are rejected. GUI settings profiles are separate objects with `gui_schema_version: 3`; prefer **Export experiment JSON** for scripts.
+Input is UTF-8 JSON accepted by `ExperimentConfig.from_dict()`. Runtime validation in model.py is authoritative, including cross-field constraints. Unknown dataclass keys are rejected. GUI settings profiles are separate objects with `gui_schema_version: 4`; prefer **Export experiment JSON** for scripts.
 
 | Field | Meaning / units |
 | --- | --- |
@@ -13,10 +13,14 @@ Input is UTF-8 JSON accepted by `ExperimentConfig.from_dict()`. Runtime validati
 | `temperature_mode` | `fixed` or `controlled`; physical automated control is not enabled |
 | `temperature_tolerance_k` | Positive tolerance for controlled simulations |
 | `temperature_timeout_s` | Positive stabilization timeout |
-| `input_loss_db` | Optional nonnegative loss; estimated device power = VNA power minus loss |
+| `input_loss_db` | Legacy optional total loss, alternative to the component fields |
+| `room_temperature_attenuation_db`, `cold_attenuation_db` | Optional nominal dB losses; both required for a component-based device-power estimate |
+| `input_line`, `attenuation_notes` | Editable input-line label and loss provenance |
 | `thermometry` | `none`, `simulator` or `lsci_log`; legacy `lakeshore372` is rejected |
 | `pid` | Simulator/prototype settings; not permission to control real hardware |
 | `notes` | User annotation |
+
+Each resonator may also define `power_if_bandwidths`, a list of `{power_dbm, if_bandwidth_hz}` overrides for the shared powers. Missing powers use its base IFBW. Overrides for deleted powers are rejected.
 
 Each sweep defines `start_hz`, `stop_hz`, `points`, `if_bandwidth_hz`, `averages`, `s_parameter`, `timeout_s`, `settle_s`. Start must be below stop, points >= 2, averages >= 1. For log thermometry, set `backend: "lsci_log"`, `log_path`, `log_channel: "6"`, `log_max_age_s: 180`. See TEMPERATURE_LOGS.md for timestamp parsing. Examples are complete executable inputs except explicitly named inactive templates.
 
@@ -44,7 +48,7 @@ Load with `numpy.load(path, allow_pickle=False)`. CSV columns are `frequency_hz,
 
 Use `resonator`, `resonator_index`, `temperature_index`, `power_index` to group data. `resonator_config` and `effective_settings` describe that trace's sweep; manifest `effective_settings` is only the first configuration. Use `configuration_history` for all configurations.
 
-`vna_power_requested_dbm` and `vna_power_readback_dbm` distinguish request/readback. `estimated_device_power_dbm` is null unless an input loss was provided. `temperature_label_k` is a label, not a reading; `temperature_target_k` is for controlled runs. Measured values are `temperature_before_k`/`temperature_after_k` or null, with full provenance in their snapshots. Log snapshots include source timestamp, observation time, age, file and original row. A repeated source timestamp means a reused logger sample.
+`vna_power_requested_dbm` and `vna_power_readback_dbm` distinguish request/readback. `estimated_device_power_dbm` is null unless a legacy input loss or both room/cold components were provided. Trace `input_loss_db` is the resolved total; config `input_loss_db` is the legacy alternative. `requested_settings` and `if_bandwidth_requested_hz`/`if_bandwidth_readback_hz` distinguish the power-specific bandwidth request and readback. `temperature_label_k` is a label, not a reading; `temperature_target_k` is for controlled runs. Measured values are `temperature_before_k`/`temperature_after_k` or null, with full provenance in their snapshots. Log snapshots include source timestamp, observation time, age, file and original row. A repeated source timestamp means a reused logger sample.
 
 `acquisition_started_utc`/`acquisition_ended_utc` are ISO-8601 UTC. Trace `simulated` describes the VNA; each thermometer snapshot separately declares its own source/simulation flag. A simulated VNA can be paired with a real log reader.
 

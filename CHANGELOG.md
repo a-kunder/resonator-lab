@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased
+## 1.4.0 — 2026-11-17
+
+- Power-keyed IFBW overrides for each resonator; editable GUI table and settings profiles v4.
+- Separate room-temperature/cold attenuation fields, input-line notes and explicit editable Line D preset (20 + 43 dB).
+- Requested/readback IFBW per trace, per-power configuration history and nominal device-power metadata.
+- Reject unaccepted IFBW readback; preserve completed traces if later reconfiguration fails.
+- Fix obsolete VISA diagnostic command; remove serial-driver advice for text-log thermometry.
+- User Windows screenshots show version 1.3 setup/tests succeeded (51 tests) and VISA enumeration found the Siglent. Physical trace/calibration verification remains pending.
+
+## Repository setup
 
 - Establish standalone Git repository, contributor/AI instructions, machine-readable project map and Windows/Linux CI template.
 - Document configuration, raw data and ownership contracts for downstream analysis.

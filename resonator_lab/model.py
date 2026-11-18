@@ -1,5 +1,5 @@
 """Unit-explicit, serializable experiment configuration and data."""
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, asdict, replace
 from typing import List, Optional
 import math
 import re
@@ -63,21 +63,45 @@ class SweepSettings:
 
 
 @dataclass
+class PowerIFBandwidth:
+    power_dbm: float
+    if_bandwidth_hz: float
+
+    def validate(self):
+        if not math.isfinite(self.power_dbm):
+            raise ValueError('IFBW override power must be finite.')
+        if not math.isfinite(self.if_bandwidth_hz) or self.if_bandwidth_hz <= 0:
+            raise ValueError('IFBW overrides must be finite and positive (Hz).')
+
+
+@dataclass
 class ResonatorConfig:
     name: str
     sweep: SweepSettings = field(default_factory=SweepSettings)
+    power_if_bandwidths: List[PowerIFBandwidth] = field(default_factory=list)
 
     def validate(self):
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError('Every resonator needs a nonempty name.')
         self.sweep.validate()
+        for override in self.power_if_bandwidths:
+            override.validate()
+        powers = [item.power_dbm for item in self.power_if_bandwidths]
+        if len(powers) != len(set(powers)):
+            raise ValueError('Duplicate powers in a resonator IFBW schedule.')
+
+    def sweep_for_power(self, power_dbm):
+        bandwidth = next((item.if_bandwidth_hz for item in self.power_if_bandwidths
+                          if item.power_dbm == power_dbm), self.sweep.if_bandwidth_hz)
+        return replace(self.sweep, if_bandwidth_hz=bandwidth)
 
     def to_dict(self):
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data):
-        result = cls(name=data['name'], sweep=SweepSettings(**data.get('sweep', {})))
+        result = cls(name=data['name'], sweep=SweepSettings(**data.get('sweep', {})),
+                     power_if_bandwidths=[PowerIFBandwidth(**item) for item in data.get('power_if_bandwidths', [])])
         result.validate()
         return result
 
@@ -97,6 +121,11 @@ class ExperimentConfig:
     pid: PIDSettings = field(default_factory=PIDSettings)
     batch_name: str = 'Resonator batch'
     resonators: List[ResonatorConfig] = field(default_factory=list)
+    power_if_bandwidths: List[PowerIFBandwidth] = field(default_factory=list)  # legacy single-resonator path
+    room_temperature_attenuation_db: Optional[float] = None
+    cold_attenuation_db: Optional[float] = None
+    input_line: str = ''
+    attenuation_notes: str = ''
 
     def validate(self):
         for resonator in self.resonator_plan:
@@ -116,6 +145,14 @@ class ExperimentConfig:
             raise ValueError('Enter a resonator name.')
         if not self.powers_dbm or not all(math.isfinite(x) for x in self.powers_dbm):
             raise ValueError('Provide at least one finite VNA power in dBm.')
+        for resonator in self.resonator_plan:
+            if any(item.power_dbm not in self.powers_dbm for item in resonator.power_if_bandwidths):
+                raise ValueError('IFBW override powers for {} must appear in the shared power list.'.format(resonator.name))
+        for value in (self.room_temperature_attenuation_db, self.cold_attenuation_db):
+            if value is not None and (not math.isfinite(value) or value < 0):
+                raise ValueError('Attenuations must be finite and nonnegative, or blank for unknown.')
+        if self.input_loss_db is not None and (self.room_temperature_attenuation_db is not None or self.cold_attenuation_db is not None):
+            raise ValueError('Use either room/cold attenuation components or the legacy total input loss, not both.')
         unknown_base = self.temperature_mode == 'fixed' and self.temperatures_k == [None]
         if not unknown_base and (not self.temperatures_k or not all(x is not None and math.isfinite(x) and x > 0 for x in self.temperatures_k)):
             raise ValueError('Temperatures must be finite and above 0 K.')
@@ -137,7 +174,15 @@ class ExperimentConfig:
     @property
     def resonator_plan(self):
         """Order at one temperature. Legacy configs become a one-entry plan."""
-        return self.resonators or [ResonatorConfig(self.resonator, self.sweep)]
+        return self.resonators or [ResonatorConfig(self.resonator, self.sweep, self.power_if_bandwidths)]
+
+    @property
+    def total_input_loss_db(self):
+        if self.room_temperature_attenuation_db is not None and self.cold_attenuation_db is not None:
+            return self.room_temperature_attenuation_db + self.cold_attenuation_db
+        if self.room_temperature_attenuation_db is not None or self.cold_attenuation_db is not None:
+            return None  # An unspecified component is unknown, not zero.
+        return self.input_loss_db
 
     @property
     def total_traces(self):
@@ -154,6 +199,7 @@ class ExperimentConfig:
     def from_dict(cls, data):
         data = dict(data)
         data['sweep'] = SweepSettings(**data.get('sweep', {}))
+        data['power_if_bandwidths'] = [PowerIFBandwidth(**item) for item in data.get('power_if_bandwidths', [])]
         data['resonators'] = [ResonatorConfig.from_dict(r) for r in data.get('resonators', [])]
         data['thermometry'] = ThermometrySettings(**data.get('thermometry', {}))
         data['pid'] = PIDSettings(**data.get('pid', {}))

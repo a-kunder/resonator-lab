@@ -1,4 +1,4 @@
-Version 1.3: use `launch_power_windows.bat` for multi-resonator base batches; see BATCH_SWEEPS.md for the queue and temperature-step planner.
+Version 1.4: use `launch_power_windows.bat` for multi-resonator base batches; see BATCH_SWEEPS.md for the queue and temperature-step planner.
 
 # Windows setup
 
@@ -9,21 +9,21 @@ The GUI uses Tkinter and Matplotlib, paths use `pathlib`, and acquisition runs o
 1. Install **64-bit Python 3.9 or newer** from [python.org](https://www.python.org/downloads/windows/). Python 3.12 is a conservative choice. Include **pip**, **Tcl/Tk and IDLE**, and the Python launcher where offered. Check “Add Python to PATH” if offered. A code editor is optional.
 2. Extract the entire ZIP into a writable folder, for example `C:\Lab\resonator-lab`. Do not run from inside the ZIP. Keep the package folders together.
 3. Double-click **setup_windows.bat**. It creates a local `.venv`, installs the package and dependencies, and runs the automated tests. It needs internet access to download packages; no PowerShell activation or execution-policy changes are needed.
-4. Double-click **launch_windows.bat**. Leave **Simulator** selected and click **Start batch**. Try saving/loading settings, then the simulated temperature-sweep mode.
+4. Double-click **launch_power_windows.bat**. Leave **Simulator** selected and click **Start batch**. Try saving/loading settings, then the simulated temperature-sweep mode.
 
 If a lab PC has no internet access, prepare an offline wheel directory on an internet-connected **Windows PC with the same Python version and architecture**:
 
 ```bat
-py -3 -m pip download --dest wheels numpy matplotlib pyvisa lakeshore setuptools wheel
+py -3 -m pip download --dest wheels numpy matplotlib pyvisa setuptools wheel
 ```
 
 Copy `wheels` and the application to the lab PC. In a Command Prompt opened in the application folder:
 
 ```bat
 py -3 -m venv .venv
-.venv\Scripts\python.exe -m pip install --no-index --find-links=wheels --no-build-isolation -e ".[temperature]"
+.venv\Scripts\python.exe -m pip install --no-index --find-links=wheels --no-build-isolation -e .
 .venv\Scripts\python.exe -m unittest discover -s tests -v
-launch_windows.bat
+launch_power_windows.bat
 ```
 
 ## Enable real VNA communication
@@ -32,7 +32,7 @@ PyVISA is a Python interface; hardware also needs a VISA runtime. Install **NI-V
 
 - Connect the Siglent by USB and confirm that it appears in the vendor's VISA utility (NI MAX or Keysight Connection Expert).
 - Run **diagnose_windows.bat** to display Python/VISA details and discovered resources. This does not enable RF.
-- In the GUI, choose **Siglent SNA5000A**, click **Find VISA instruments**, and enter the exact resource address for your instrument. The original USB address is supplied as an editable default.
+- In the GUI, choose **Siglent SNA5000A**, click **Find VISA instruments**, and enter the exact resource address for your instrument. The address starts blank; use the exact resource reported for your connected VNA.
 - For LAN, use the address reported/configured by your VISA utility. Allow the required connection on your lab network/firewall if prompted. No administrator access should be needed for ordinary data acquisition after drivers are installed.
 - For a VNA-only run, choose **Power sweep at one temperature**, **Label only** thermometry, and regulation **No**. Enter the nominal temperature in **mK**. For measured temperatures, enable **Read temperatures from LSCI logs** and select the CoolDownData folder. Direct Lake Shore access remains blocked. See TEMPERATURE_LOGS.md.
 - Confirm the loaded VNA calibration and the measurement path using your normal lab procedure. The program does not perform calibration or load a calibration file.
@@ -41,7 +41,7 @@ Before collecting a large dataset, compare one trace at a modest, appropriate po
 
 ## Current base-power workflow
 
-Use **launch_power_windows.bat**. It opens the base power GUI and never opens COM3 or changes the LSCI Reader. Enable the optional CH6 T log reader to save measured temperatures; with logging disabled temperatures remain null. The current setup installs only the VNA/plotting dependencies. See BASE_POWER_SWEEP.md for the original Res1.1 preset and hardware first-run check.
+Use **launch_power_windows.bat**. It opens the base power GUI and never opens COM3 or changes the LSCI Reader. Enable the optional CH6 T log reader to save measured temperatures; with logging disabled temperatures remain null. The current setup installs only the VNA/plotting dependencies. Per-power IFBW and attenuation controls are described in docs/POWER_IFBW_AND_ATTENUATION.md. See BASE_POWER_SWEEP.md for the original Res1.1 preset and hardware first-run check.
 
 ## Running and stopping
 

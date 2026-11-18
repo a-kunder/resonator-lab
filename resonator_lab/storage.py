@@ -70,10 +70,11 @@ class RunStore:
         self.manifest['effective_settings'] = settings
         self.flush()
 
-    def record_configuration(self, temperature_index, resonator_index, resonator, settings):
+    def record_configuration(self, temperature_index, resonator_index, resonator, settings, power_index=None, requested_sweep=None):
         self.manifest['configuration_history'].append({
             'temperature_index': temperature_index, 'resonator_index': resonator_index,
-            'resonator': resonator.name, 'requested_settings': resonator.to_dict()['sweep'],
+            'resonator': resonator.name, 'power_index': power_index,
+            'requested_settings': requested_sweep if requested_sweep is not None else resonator.to_dict()['sweep'],
             'effective_settings': dict(settings), 'configured_utc': utc_now()})
         # Retain this legacy field as the first configuration, not the last one.
         self.manifest.setdefault('effective_settings', dict(settings))

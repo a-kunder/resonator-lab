@@ -1,4 +1,4 @@
-# Resonator Lab 1.3
+# Resonator Lab 1.4
 
 Acquire complex VNA power sweeps for an **ordered batch of resonators**, with one shared power list. Each resonator has its own frequency window, IF bandwidth, averaging, point count, S-parameter, timeout and settling time. The same batch is the reusable measurement unit at every temperature.
 
@@ -9,6 +9,10 @@ The order is **temperature → resonator → power**. Base mode runs the batch o
 Clone this repository (or extract the full source ZIP), run `setup_windows.bat`, then **launch_power_windows.bat**. It opens the simplified base-batch GUI in Simulator mode. Install/use a working VISA runtime and select the correct Siglent USB/TCPIP resource for a real measurement. COM/ASRL resources are rejected by the VNA adapter so it cannot open the logger's COM3 as a VNA.
 
 See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) and the [batch and temperature-step guide](BATCH_SWEEPS.md). Actual VNA acquisition and Windows execution still require lab verification; compare one low-power trace with the instrument display first.
+
+## Power-dependent IFBW and attenuation
+
+Use the **Power IFBW** tab to assign bandwidths to selected power rows for each resonator, then **Update selected** to apply. Unspecified powers use the base IFBW. Overrides stay tied to power values when reordered. Separate editable room-temperature/cold attenuation fields record nominal losses and estimated device power. The explicit **Line D** preset fills 20 dB RT and 43 dB cold (4 K 20 + cold plate 3 + MXC 20). See [the guide](docs/POWER_IFBW_AND_ATTENUATION.md) and `examples/line_d_power_ifbw.json`.
 
 ## GUI
 
@@ -30,7 +34,7 @@ For fixed steps, stop is included only when aligned: 20→75 mK in 20 mK steps g
 
 The first example contains all nine original resonators and fourteen shared powers (126 traces at base). The second repeats them at five temperatures (630 traces). For a real base run, omit `--simulate` and add `--address "YOUR_VNA_USB_OR_TCPIP_RESOURCE"`.
 
-Old single-resonator JSON files still work. GUI profiles accept versions 1–3. The new `resonators` list is authoritative when nonempty; otherwise the legacy `resonator` and `sweep` fields define a single resonator. The original frequency settings are packaged as JSON data; the supplied lab scripts are never executed to load a preset.
+Old single-resonator JSON files still work. GUI profiles accept versions 1–4. The new `resonators` list is authoritative when nonempty; otherwise the legacy `resonator` and `sweep` fields define a single resonator. The original frequency settings are packaged as JSON data; the supplied lab scripts are never executed to load a preset.
 
 ```python
 from resonator_lab import ExperimentConfig, ResonatorConfig, SweepSettings
@@ -52,7 +56,7 @@ The runner is `ResonatorPowerSweep(vna, temperature_controller=None, temperature
 
 ## Data for future Qi / Qc fitting
 
-Each run contains `manifest.json`, reusable `config.json`, and `traces/trace_NNNNN.npz`, `.csv` and `.json` for every acquired trace. The GUI additionally saves per-resonator overview PNGs. Temperature logging files are retained where a simulated/readout interface is used.
+Each run contains `manifest.json`, reusable `config.json`, and `traces/trace_NNNNN.npz`, `.csv` and `.json` for every acquired trace. The GUI additionally saves per-resonator overview PNGs. Temperature logging files are retained where a simulated/readout interface is used. Per-power IFBW reconfigurations are included in configuration history with their power index.
 
 The NPZ contract remains:
 
@@ -90,7 +94,7 @@ Use **Read temperatures from LSCI logs**, choose **Yes**, select Documents/CoolD
 
 ## Development and AI contributors
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), [architecture](docs/ARCHITECTURE.md) and [data-format reference](docs/DATA_FORMAT.md). [PROJECT_MAP.json](PROJECT_MAP.json) provides machine-readable entry points, module responsibilities, commands and capability status. A [GitHub Actions template](docs/github-actions-tests.yml) is provided for Windows/Linux testing; see [activation instructions](docs/CI.md). Completed changes are committed and pushed when access permits.
+Read [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), [architecture](docs/ARCHITECTURE.md) and [data-format reference](docs/DATA_FORMAT.md). [PROJECT_MAP.json](PROJECT_MAP.json) provides machine-readable entry points, module responsibilities, commands and capability status. A [GitHub Actions template](docs/github-actions-tests.yml) is provided for Windows/Linux testing; see [activation instructions](docs/CI.md). Completed changes are committed and pushed when access permits. Version 1.4 preserves raw array schema 1.2 and records requested/readback IFBW per trace.
 
 Clone with `git clone https://github.com/a-kunder/resonator-lab.git`. Measurement data belong in the ignored `data/` directory; the tracked sample runs are synthetic. The first Git commit snapshots version 1.3.0 and repository setup, rather than reconstructing earlier local history. See [CHANGELOG.md](CHANGELOG.md).
 
