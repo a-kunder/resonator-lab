@@ -124,6 +124,10 @@
     {
       "path": "docs/SIGLENT_ACQUISITION.md",
       "purpose": "Native averaging-trigger protocol, observed firmware error, and verification limits"
+    },
+    {
+      "path": "docs/LAB_PC_HANDOFF.md",
+      "purpose": "Lab Windows context and instructions for continuing this project in local Codex"
     }
   ],
   "data": {

@@ -103,3 +103,5 @@ Clone with `git clone https://github.com/a-kunder/resonator-lab.git`. Measuremen
 ## License
 
 No software license has been selected. Public visibility alone does not grant a general open-source reuse license.
+
+For continuing development with Codex on the lab Windows computer, use [the lab handoff summary](docs/LAB_PC_HANDOFF.md). It includes project state and a starter prompt if conversation handoff is unavailable.
