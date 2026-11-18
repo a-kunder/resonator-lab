@@ -1,8 +1,10 @@
-# Resonator Lab 1.4.1
+# Resonator Lab 1.4.2
 
 Acquire complex VNA power sweeps for an **ordered batch of resonators**, with one shared power list. Each resonator has its own frequency window, IF bandwidth, averaging, point count, S-parameter, timeout and settling time. The same batch is the reusable measurement unit at every temperature.
 
 The order is **temperature → resonator → power**. Base mode runs the batch once and leaves LSCI Reader untouched. Read-only CH6 T log integration is available; automatic temperature control is deferred; the complete nested schedule can already be rehearsed with the simulator.
+
+Version 1.4.2 fixes the SNA5000A grouped-trigger SCPI error using documented native average triggering. See [acquisition details](docs/SIGLENT_ACQUISITION.md).
 
 ## Start on Windows
 

@@ -54,7 +54,7 @@ class VNA(ABC):
 class SiglentVNA(VNA):
     """Channel 1, linear frequency sweep; preserves loaded calibration.
 
-    A grouped acquisition collects exactly the configured averaging count.
+    Native TRIG:AVER collects the configured averaging count with one trigger.
     *OPC? blocks until completion. Stop is cooperative between acquisitions;
     a blocked acquisition is bounded by timeout_s, not interrupted from another thread.
     """
@@ -102,7 +102,7 @@ class SiglentVNA(VNA):
         # Require the operator to resolve any pre-existing errors; do not hide them.
         self.check_errors()
         for command in (
-            ':SENS1:SWE:MODE HOLD',
+            ':TRIG:MODE HOLD',
             ':SENS1:SWE:TYPE LIN',
             # Expand first so moving between disjoint windows cannot cross the old endpoint.
             ':SENS1:FREQ:STOP {}'.format(max(settings.stop_hz, float(self.query(':SENS1:FREQ:STOP?')))),
@@ -110,9 +110,10 @@ class SiglentVNA(VNA):
             ':SENS1:FREQ:STOP {}'.format(settings.stop_hz),
             ':SENS1:SWE:POIN {}'.format(settings.points),
             ':SENS1:BAND {}'.format(settings.if_bandwidth_hz),
-            ':SENS1:AVER:COUN {}'.format(settings.averages),
+            ':SENS1:AVER:COUN {}'.format(max(2, settings.averages)),
             ':SENS1:AVER {}'.format(int(settings.averages > 1)),
             ':TRIG:SEQ:SOUR BUS',
+            ':TRIG:AVER {}'.format(int(settings.averages > 1)),
             ':FORM:DATA ASC',
         ):
             self.write(command)
@@ -122,11 +123,16 @@ class SiglentVNA(VNA):
             'stop_hz': float(self.query(':SENS1:FREQ:STOP?')),
             'points': int(float(self.query(':SENS1:SWE:POIN?'))),
             'if_bandwidth_hz': float(self.query(':SENS1:BAND?')),
-            'averages': int(float(self.query(':SENS1:AVER:COUN?'))),
+            'averaging_factor_readback': int(float(self.query(':SENS1:AVER:COUN?'))),
             'averaging_enabled': bool(int(self.query(':SENS1:AVER?'))),
+            'trigger_averaging_enabled': bool(int(self.query(':TRIG:AVER?'))),
+            'acquisition_strategy': 'siglent_native_averaging_trigger',
             's_parameter': settings.s_parameter,
             'frequency_axis': 'linear axis reconstructed from instrument readbacks',
         }
+        self.effective['averages'] = self.effective['averaging_factor_readback'] if self.effective['averaging_enabled'] else 1
+        if self.effective['trigger_averaging_enabled'] != (settings.averages > 1):
+            raise RuntimeError('VNA did not accept the requested averaging-trigger state.')
         bandwidth = self.effective['if_bandwidth_hz']
         if not np.isfinite(bandwidth) or not np.isclose(bandwidth, settings.if_bandwidth_hz, rtol=1e-6, atol=0):
             raise RuntimeError('VNA IF bandwidth readback {} Hz differs from requested {} Hz.'.format(bandwidth, settings.if_bandwidth_hz))
@@ -156,12 +162,12 @@ class SiglentVNA(VNA):
             # RAWD? explicitly addresses Sij; it does not require a display trace named Sij.
             # Stay in HOLD after completion, so continuous sweeps cannot overwrite data.
             self.write(':SENS1:AVER:CLE')
-            self.write(':SENS1:SWE:GRO:COUN {}'.format(self.effective['averages']))
-            self.write(':SENS1:SWE:MODE GRO')
+            # Siglent SNA5000A guide section 4.5.1: TRIG:AVER ON makes
+            # one trigger acquire a full average. GRO is unsupported on this VNA.
             self.write(':TRIG:SEQ:SING')
             if int(self.query('*OPC?')) != 1:
                 raise RuntimeError('VNA did not confirm acquisition completion.')
-            self.write(':SENS1:SWE:MODE HOLD')
+            self.write(':TRIG:MODE HOLD')
             self.check_errors()
             raw = np.asarray(self.dev.query_ascii_values(':SENS1:DATA:RAWD? ' + self.settings.s_parameter), dtype=float)
             self.check_errors()
@@ -169,7 +175,9 @@ class SiglentVNA(VNA):
             if raw.ndim != 1 or len(raw) != 2 * count:
                 raise ValueError('Expected {} real/imaginary pairs; received {} numbers.'.format(count, raw.size))
             trace = Trace(np.linspace(self.effective['start_hz'], self.effective['stop_hz'], count),
-                          raw[::2] + 1j * raw[1::2], {'readout_command': ':SENS1:DATA:RAWD? ' + self.settings.s_parameter})
+                          raw[::2] + 1j * raw[1::2], {'readout_command': ':SENS1:DATA:RAWD? ' + self.settings.s_parameter,
+                           'acquisition_strategy': 'siglent_native_averaging_trigger',
+                           'acquisition_trigger_count': 1, 'acquisition_average_count': self.effective['averages']})
             trace.validate()
             return trace
         finally:

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.2 — 2026-11-17
+
+- Replace unsupported grouped-sweep commands with documented Siglent TRIG:AVER native averaging trigger and TRIG:MODE HOLD.
+- Validate trigger-average readback and record acquisition strategy/count metadata.
+- Disable averaging for one-sweep requests without writing invalid averaging factor 1.
+- Add protocol regression tests rejecting the previous unsupported command path.
+
 ## 1.4.1 — 2026-11-17
 
 - Accept actual no-space LSCI filenames such as CH6 T26-11-17.txt, plus spaced names and case/extension/date-width variants.

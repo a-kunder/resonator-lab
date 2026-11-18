@@ -1,3 +1,12 @@
+# Version 1.4.2 validation — 2026-11-17
+
+- All 72 tests passed with Python 3.11 in 13.242 seconds, including four new native Siglent trigger protocol regressions. The fake resource rejects GRO/foreign sweep-mode writes and validates averaging trigger use, one-sweep handling with a legal inactive factor, single clear/trigger/read per trace, repeated acquisitions and fail-before-acquisition on refused trigger-average readback.
+- Updated existing adapter order checks to assert native triggering, OPC then HOLD before RAWD, with no GRO commands. Existing timeout restoration, malformed-data, RF-off/error preservation and batch/logging tests pass.
+- Official Siglent programming-guide sections document native TRIG:AVER, TRIG:MODE and TRIG:SEQ:SING/OPC synchronization; see docs/SIGLENT_ACQUISITION.md.
+- No real VNA acquisition was performed here. User lab screenshot establishes that the old GRO command is rejected and LSCI logging succeeds, not that the replacement is physically validated. Calibration/RAWD semantics remain a lab check.
+
+---
+
 # Version 1.4.1 validation — 2026-11-17
 
 - All 68 automated tests passed with Python 3.11 in 13.188 seconds. Eight added tests cover actual no-space and spaced filenames, case/extensions/four-digit dates, saved dated-folder/file rollover without restart, a missing saved daily folder, empty/partial new-day files with freshness-gated fallback, malformed complete new-day records, explicit pinning/duplicate rejection, recursive year/month layout, channel/quantity filtering, and settings serialization/type checks.

@@ -36,7 +36,7 @@ Physical automated temperature control and Qi/Qc fitting are future work. Siglen
 5. Save acquired data even if the subsequent temperature read fails; then stop and record the error.
 6. Disable RF, close resources and finalize run status on success, cancellation or failure.
 
-The Siglent adapter clears averaging once, triggers the group, waits, holds and reads without retriggering during save. Tests use fake VISA; they do not prove the real instrument's firmware behavior.
+The Siglent adapter clears averaging once, uses native TRIG:AVER and a single bus trigger, waits, holds and reads without retriggering during save. Tests use fake VISA; they do not prove the real instrument's firmware behavior.
 
 ## Threading
 
@@ -49,3 +49,5 @@ LSCI Reader is the sole owner of fridge control. File reads do not grant control
 ## Validation
 
 Run `python -m unittest discover -s tests -v`. The optional CI template targets Windows and Linux with Python 3.10/3.12; it is not active until installed in .github/workflows (see CI.md). See VALIDATION.md for local evidence and remaining physical checks. GUI rendering, actual log sharing and Windows drivers need separate lab validation.
+
+The native trigger sequence and command references are in [SIGLENT_ACQUISITION.md](SIGLENT_ACQUISITION.md).

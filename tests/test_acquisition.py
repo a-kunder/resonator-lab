@@ -17,7 +17,7 @@ class FakeResource:
         self.replies = {'*IDN?': 'SIGLENT,SNA5014A,TEST,1.0', ':SYST:ERR?': '0,"No error"',
                         ':SENS1:FREQ:STAR?': '100', ':SENS1:FREQ:STOP?': '200',
                         ':SENS1:SWE:POIN?': '3', ':SENS1:BAND?': '1000',
-                        ':SENS1:AVER:COUN?': '2', ':SENS1:AVER?': '1', ':OUTP?': '0',
+                        ':SENS1:AVER:COUN?': '2', ':SENS1:AVER?': '1', ':TRIG:AVER?': '1', ':OUTP?': '0',
                         ':SOUR1:POW?': '-30', '*OPC?': '1'}
 
     def write(self, command):
@@ -155,9 +155,10 @@ class Tests(unittest.TestCase):
         trace = vna.acquire(threading.Event())
         self.assertEqual(trace.s_complex.shape, (3,))
         self.assertEqual(dev.commands.count(':TRIG:SEQ:SING'), 1)
-        self.assertIn(':SENS1:SWE:GRO:COUN 2', dev.commands)
+        self.assertIn(':TRIG:AVER 1', dev.commands)
+        self.assertFalse(any(':GRO' in command or ':SENS1:SWE:MODE' in command for command in dev.commands))
         self.assertLess(dev.commands.index('*OPC?'), dev.commands.index(':SENS1:DATA:RAWD? S43'))
-        self.assertEqual(dev.commands[dev.commands.index('*OPC?') + 1], ':SENS1:SWE:MODE HOLD')
+        self.assertEqual(dev.commands[dev.commands.index('*OPC?') + 1], ':TRIG:MODE HOLD')
         self.assertEqual(dev.timeout, 5000)
         vna.close(); self.assertTrue(dev.closed); self.assertFalse(rm.closed)
 

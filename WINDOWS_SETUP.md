@@ -37,7 +37,7 @@ PyVISA is a Python interface; hardware also needs a VISA runtime. Install **NI-V
 - For a VNA-only run, choose **Power sweep at one temperature**, **Label only** thermometry, and regulation **No**. Enter the nominal temperature in **mK**. For measured temperatures, enable **Read temperatures from LSCI logs** and select the CoolDownData folder. Direct Lake Shore access remains blocked. See TEMPERATURE_LOGS.md.
 - Confirm the loaded VNA calibration and the measurement path using your normal lab procedure. The program does not perform calibration or load a calibration file.
 
-Before collecting a large dataset, compare one trace at a modest, appropriate power against the VNA display and verify averaging on your firmware. The adapter preserves the supplied wrapper's `SENS1:DATA:RAWD? Sij` readout and grouped-trigger approach. Unsupported SCPI commands are reported as errors. In particular, the meaning of RAWD versus the displayed corrected trace must be verified before using Qi/Qc fits quantitatively. No physical-instrument test was possible during development.
+Before collecting a large dataset, compare one trace at a modest, appropriate power against the VNA display and verify averaging on your firmware. The adapter preserves the supplied wrapper's `SENS1:DATA:RAWD? Sij` readout; native TRIG:AVER now replaces the incompatible grouped-sweep approach (see docs/SIGLENT_ACQUISITION.md). Unsupported SCPI commands are reported as errors. In particular, the meaning of RAWD versus the displayed corrected trace must be verified before using Qi/Qc fits quantitatively. No physical-instrument test was possible during development.
 
 ## Current base-power workflow
 

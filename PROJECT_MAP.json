@@ -1,12 +1,12 @@
 {
   "map_version": 1,
   "name": "resonator-lab",
-  "application_version": "1.4.1",
+  "application_version": "1.4.2",
   "repository": "https://github.com/a-kunder/resonator-lab",
   "language": "Python",
   "python_requires": ">=3.9",
   "status": {
-    "power_batches": "implemented; physical VNA validation pending",
+    "power_batches": "implemented; native average trigger documented; physical acquisition validation pending",
     "log_thermometry": "implemented; flexible filenames, automatic daily rollover and freshness; actual lab file validation pending",
     "physical_temperature_control": "disabled; owner-mediated adapter pending",
     "q_fitting": "not implemented",
@@ -120,6 +120,10 @@
     {
       "path": "docs/POWER_IFBW_AND_ATTENUATION.md",
       "purpose": "Power-dependent bandwidths, attenuation and Line D record"
+    },
+    {
+      "path": "docs/SIGLENT_ACQUISITION.md",
+      "purpose": "Native averaging-trigger protocol, observed firmware error, and verification limits"
     }
   ],
   "data": {
