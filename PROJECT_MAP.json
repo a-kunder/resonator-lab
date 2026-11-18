@@ -1,13 +1,13 @@
 {
   "map_version": 1,
   "name": "resonator-lab",
-  "application_version": "1.4.0",
+  "application_version": "1.4.1",
   "repository": "https://github.com/a-kunder/resonator-lab",
   "language": "Python",
   "python_requires": ">=3.9",
   "status": {
     "power_batches": "implemented; physical VNA validation pending",
-    "log_thermometry": "implemented; actual lab log validation pending",
+    "log_thermometry": "implemented; flexible filenames, automatic daily rollover and freshness; actual lab file validation pending",
     "physical_temperature_control": "disabled; owner-mediated adapter pending",
     "q_fitting": "not implemented",
     "power_dependent_ifbw": "implemented; power-keyed per resonator; physical readback validation pending",

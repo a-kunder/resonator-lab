@@ -130,3 +130,87 @@ class LogThermometryTests(unittest.TestCase):
         self.assertEqual(cfg.thermometry.backend, 'lsci_log')
         self.assertEqual(cfg.temperature_mode, 'fixed')
         self.assertEqual(cfg.temperatures_k, [None])
+
+    def test_actual_filename_spacing_case_and_extensions(self):
+        self.path.unlink()
+        for name in ['CH6 T26-11-16.txt', 'CH6 T 26-11-16.txt', 'ch6t26-11-16.TXT',
+                     'CH6  T26-11-16', 'CH6_T_2026-11-16.csv', 'CH6 T26_11_16.log']:
+            path = self.path.parent / name
+            path.write_text(self.row)
+            self.assertEqual(self.reader().read_snapshot()['primary_kelvin'], .0143277, name)
+            path.unlink()
+
+    def test_saved_daily_folder_or_file_follows_new_day_without_restart(self):
+        for selected in (self.path.parent, self.path):
+            self.settings.log_path = str(selected)
+            self.now = self.local.astimezone(timezone.utc) + timedelta(seconds=61)
+            self.assertEqual(self.reader().read_snapshot()['primary_kelvin'], .0143277)
+            following = self.root/'26-11-17'/'CH6 T26-11-17.txt'
+            following.parent.mkdir(exist_ok=True)
+            following.write_text('17-11-26,00:00:00,.02\n')
+            self.now = datetime(2026,11,17).astimezone(timezone.utc)
+            snapshot = self.reader().read_snapshot()
+            self.assertEqual(snapshot['primary_kelvin'], .02)
+            self.assertEqual(snapshot['log_search_root'], str(self.root.resolve()))
+            following.unlink()
+
+    def test_missing_saved_daily_folder_still_follows_siblings(self):
+        self.settings.log_path = str(self.root/'26-11-15')
+        self.assertEqual(self.reader().read_snapshot()['primary_kelvin'], .0143277)
+
+    def test_empty_new_file_uses_fresh_previous_day_until_first_record(self):
+        self.path.write_text('16-11-26,23:59:30,.015\n')
+        following = self.root/'26-11-17'/'CH6 T26-11-17.txt'
+        following.parent.mkdir()
+        following.write_text('17-11-26,00:00:00,')
+        self.now = datetime(2026,11,17,0,0,10).astimezone(timezone.utc)
+        reader = self.reader()
+        snapshot = reader.read_snapshot()
+        self.assertEqual(snapshot['age_s'], 40)
+        self.assertEqual(snapshot['primary_kelvin'], .015)
+        following.write_text('17-11-26,00:00:00,.02\n')
+        self.assertEqual(reader.read_snapshot()['primary_kelvin'], .02)
+        following.write_text('')
+        self.now += timedelta(seconds=180)
+        with self.assertRaisesRegex(ValueError, 'stale'):
+            reader.read_snapshot()
+
+    def test_malformed_new_day_never_falls_back_to_old_reading(self):
+        following = self.root/'26-11-17'/'CH6 T26-11-17.txt'
+        following.parent.mkdir()
+        following.write_text('garbage\n')
+        with self.assertRaisesRegex(ValueError, 'Invalid latest'):
+            self.reader().read_snapshot()
+
+    def test_pin_mode_and_duplicate_candidates(self):
+        following = self.root/'26-11-17'/'CH6 T26-11-17.txt'
+        following.parent.mkdir()
+        following.write_text('17-11-26,00:00:00,.02\n')
+        self.settings.log_follow_daily = False
+        for selected in (self.path.parent, self.path):
+            self.settings.log_path = str(selected)
+            self.assertEqual(self.reader().read_snapshot()['primary_kelvin'], .0143277)
+        self.settings.log_path = str(self.root)
+        self.settings.log_follow_daily = True
+        copy = following.with_name('CH6 T 26-11-17.txt')
+        copy.write_text(following.read_text())
+        with self.assertRaisesRegex(ValueError, 'Multiple temperature files'):
+            self.reader().read_snapshot()
+
+    def test_recursive_month_year_layout_and_other_quantities_excluded(self):
+        self.path.unlink()
+        nested = self.root/'2026'/'November'/'26-11-16'
+        nested.mkdir(parents=True)
+        (nested/'CH6 T26-11-16.txt').write_text(self.row)
+        for name in ['CH6 R26-11-17.txt', 'CH6 P26-11-17.txt', 'CH16 T26-11-17.txt']:
+            (nested/name).write_text('17-11-26,00:00:00,999\n')
+        self.assertEqual(self.reader().read_snapshot()['primary_kelvin'], .0143277)
+
+    def test_follow_setting_json_roundtrip_and_type_validation(self):
+        cfg = ExperimentConfig(thermometry=self.settings)
+        self.assertTrue(ExperimentConfig.from_dict(cfg.to_dict()).thermometry.log_follow_daily)
+        cfg.thermometry.log_follow_daily = False
+        self.assertFalse(ExperimentConfig.from_dict(cfg.to_dict()).thermometry.log_follow_daily)
+        cfg.thermometry.log_follow_daily = 'No'
+        with self.assertRaisesRegex(ValueError, 'true or false'):
+            cfg.validate()

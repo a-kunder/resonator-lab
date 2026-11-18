@@ -7,4 +7,4 @@ from .storage import load_trace, iter_run
 from .thermometry import ThermometrySettings, PIDSettings, LakeShore372Reader
 from .temperature_control import LakeShore372PID, SimulatedPIDTemperature
 
-__version__ = '1.4.0'
+__version__ = '1.4.1'

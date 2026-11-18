@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.1 — 2026-11-17
+
+- Accept actual no-space LSCI filenames such as CH6 T26-11-17.txt, plus spaced names and case/extension/date-width variants.
+- Default automatic daily rollover from root, dated-folder or daily-file profiles; recursive root search and explicit pin-mode option.
+- Bridge empty/partial midnight files only with still-fresh previous-day data; never hide malformed complete records or stale data.
+- Display application version in the GUI title to identify old launches.
+
 ## 1.4.0 — 2026-11-17
 
 - Power-keyed IFBW overrides for each resonator; editable GUI table and settings profiles v4.

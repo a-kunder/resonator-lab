@@ -1,4 +1,4 @@
-# Resonator Lab 1.4
+# Resonator Lab 1.4.1
 
 Acquire complex VNA power sweeps for an **ordered batch of resonators**, with one shared power list. Each resonator has its own frequency window, IF bandwidth, averaging, point count, S-parameter, timeout and settling time. The same batch is the reusable measurement unit at every temperature.
 
@@ -90,7 +90,7 @@ LSCI Reader remains the owner of the fridge. Physical temperature control, retur
 
 ## Read temperatures alongside VNA acquisition
 
-Use **Read temperatures from LSCI logs**, choose **Yes**, select Documents/CoolDownData, and click **Check latest temperature**. Channel 6 and a 180-second maximum age are the defaults. No additional dependency is needed. See [TEMPERATURE_LOGS.md](TEMPERATURE_LOGS.md) for the observed format, timestamps, daily rollover and failure behavior.
+Use **Read temperatures from LSCI logs**, choose **Yes**, select Documents/CoolDownData, and click **Check latest temperature**. Channel 6, a 180-second maximum age, and automatic daily-folder following are the defaults. Both CH6 T26-11-17 and CH6 T 26-11-17 filenames work; dated-folder/file profiles follow new sibling daily folders automatically. No additional dependency is needed. See [TEMPERATURE_LOGS.md](TEMPERATURE_LOGS.md) for the observed format, timestamps, daily rollover and failure behavior.
 
 ## Development and AI contributors
 

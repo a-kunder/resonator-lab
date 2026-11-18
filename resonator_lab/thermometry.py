@@ -38,6 +38,7 @@ class ThermometrySettings:
     log_path: str = ''
     log_channel: str = '6'
     log_max_age_s: float = 180.0
+    log_follow_daily: bool = True
 
     def validate(self):
         if self.backend not in ('none', 'lakeshore372', 'simulator', 'lsci_log'):
@@ -46,6 +47,8 @@ class ThermometrySettings:
             if not self.log_path.strip():
                 raise ValueError('Choose the CoolDownData folder or a CH6 T log file.')
             channel_id(self.log_channel)
+            if not isinstance(self.log_follow_daily, bool):
+                raise ValueError('log_follow_daily must be true or false.')
             if not math.isfinite(self.log_max_age_s) or self.log_max_age_s <= 0:
                 raise ValueError('Maximum log age must be finite and positive.')
             return

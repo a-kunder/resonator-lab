@@ -1,3 +1,11 @@
+# Version 1.4.1 validation — 2026-11-17
+
+- All 68 automated tests passed with Python 3.11 in 13.188 seconds. Eight added tests cover actual no-space and spaced filenames, case/extensions/four-digit dates, saved dated-folder/file rollover without restart, a missing saved daily folder, empty/partial new-day files with freshness-gated fallback, malformed complete new-day records, explicit pinning/duplicate rejection, recursive year/month layout, channel/quantity filtering, and settings serialization/type checks.
+- Local Tk smoke test passed: version 1.4.1 title, automatic-follow default, actual-style no-space filename in a selected dated folder, and asynchronous GUI temperature check.
+- No physical instruments or real log files were read. The fix is based on filenames visible in the supplied Windows photo; real log encoding/sharing still needs lab verification. Sensor timestamp age checks, source provenance and LSCI ownership are preserved.
+
+---
+
 # Version 1.4 validation — 2026-11-17
 
 - All 60 automated tests passed with Python 3.11 in 12.622 seconds. Nine new tests cover power-keyed IFBW schedules, reordering/base fallback, invalid/deleted override powers, legacy and component attenuation semantics, nested temperature/resonator/power metadata, RF-off reconfiguration, failed reconfiguration preserving completed data, GUI parser/Line D preset, and rejection of unaccepted instrument IFBW readback.

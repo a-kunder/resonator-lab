@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from . import __version__
 from .model import ExperimentConfig, SweepSettings, ResonatorConfig, PowerIFBandwidth, sequence, stepped_sequence
 from .instruments import DEFAULT_ADDRESS, SiglentVNA, SimulatedVNA
 from .experiment import ResonatorPowerSweep
@@ -23,7 +24,7 @@ class ResonatorApp:
     def __init__(self, root, power_only=False):
         self.root = root
         self.power_only = power_only
-        self.root.title('Resonator Lab · Base power sweep' if power_only else 'Resonator Lab · Power sweeps')
+        self.root.title('Resonator Lab {} · {}'.format(__version__, 'Base power sweep' if power_only else 'Power sweeps'))
         screen_w = self.root.winfo_screenwidth() or 1360
         screen_h = self.root.winfo_screenheight() or 950
         self.root.geometry('{}x{}'.format(min(1280, max(1040, screen_w - 80)), min(850, max(640, screen_h - 100))))
@@ -170,12 +171,13 @@ class ResonatorApp:
         self.field(logs, 'Record CH temperature logs', 'log_enabled', 'No', ['No', 'Yes'])
         self.field(logs, 'CoolDownData folder or daily T file', 'log_path', str(Path.home() / 'Documents' / 'CoolDownData'))
         self.field(logs, 'Temperature channel', 'log_channel', '6')
+        self.field(logs, 'Follow new daily folders automatically', 'log_follow_daily', 'Yes', ['Yes', 'No'])
         self.field(logs, 'Maximum reading age (s)', 'log_max_age_s', '180')
         for label, command in [('Choose log folder…', self.choose_log_folder), ('Choose daily T file…', self.choose_log_file), ('Check latest temperature', self.check_log_temperature)]:
             button = ttk.Button(logs, text=label, command=command)
             button.pack(fill='x', pady=3)
             self.profile_widgets.append(button)
-        ttk.Label(logs, text='Reads CH6 T files only. Folder mode follows daily rollover. Dates are day-month-year; times use this PC’s local timezone. LSCI keeps control. Old or invalid readings stop acquisition.', style='Hint.TLabel', wraplength=325).pack(anchor='w')
+        ttk.Label(logs, text='Accepts CH6 T26-11-17 and CH6 T 26-11-17. Auto mode follows new daily folders even from a saved dated path. Dates are day-month-year; times use this PC’s local timezone. LSCI keeps control. Old or invalid readings stop acquisition.', style='Hint.TLabel', wraplength=325).pack(anchor='w')
         save = self.section(form, '4  Timing and files' if power_only else '5  Timing and files')
         self.field(save, 'Output folder', 'output_root', str(Path.cwd() / 'data'))
         browse = ttk.Button(save, text='Choose output folder…', command=self.choose_folder)
@@ -576,6 +578,7 @@ class ResonatorApp:
         self.vars['log_enabled'].set('Yes' if config.thermometry.backend == 'lsci_log' else 'No')
         for key in ('log_path', 'log_channel', 'log_max_age_s'):
             self.vars[key].set(str(getattr(config.thermometry, key)))
+        self.vars['log_follow_daily'].set('Yes' if config.thermometry.log_follow_daily else 'No')
         known = [t for t in config.temperatures_k if t is not None]
         self.vars['single_temperature_mk'].set(str(known[0] * 1000) if known else '')
         if known:
@@ -790,7 +793,8 @@ class ResonatorApp:
 
     def log_settings(self):
         return ThermometrySettings(backend='lsci_log', log_path=self.vars['log_path'].get().strip(),
-            log_channel=self.vars['log_channel'].get().strip(), log_max_age_s=float(self.vars['log_max_age_s'].get()))
+            log_channel=self.vars['log_channel'].get().strip(), log_max_age_s=float(self.vars['log_max_age_s'].get()),
+            log_follow_daily=self.vars['log_follow_daily'].get() != 'No' if 'log_follow_daily' in self.vars else True)
 
     def choose_log_folder(self):
         path = filedialog.askdirectory()
@@ -870,6 +874,8 @@ class ResonatorApp:
             old_batch = list(self.batch)
             old_selected = self.selected_batch_index
             try:
+                if 'log_follow_daily' not in data['fields']:
+                    self.vars['log_follow_daily'].set('Yes')
                 for key in ('room_temperature_attenuation_db', 'cold_attenuation_db', 'input_line', 'attenuation_notes', 'power_if_bandwidths'):
                     if key not in data['fields']:
                         self.vars[key].set('')

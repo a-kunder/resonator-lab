@@ -1,4 +1,4 @@
-# Temperature recording from the existing LSCI logs (v1.3)
+# Temperature recording from the existing LSCI logs (v1.4.1)
 
 This integration reads the text files already written by LSCI Reader. It never opens COM3, sends Lake Shore commands, or changes PID, heaters, scanner or setpoints. The user confirmed that acquisition runs on the same Windows PC, CH6 T is the mixing-chamber thermometer and a new sample arrives about once per minute.
 
@@ -7,7 +7,7 @@ This integration reads the text files already written by LSCI Reader. It never o
 1. Extract the new package and launch `launch_power_windows.bat`. Existing dependencies suffice; rerun `setup_windows.bat` if this is a new installation.
 2. In **Read temperatures from LSCI logs**, select **Yes**.
 3. Choose the actual **Documents/CoolDownData** folder. The suggested home directory path is editable because Windows Documents may be redirected. You can also choose one daily folder or an individual temperature file.
-4. Leave channel **6** and maximum reading age **180 seconds** initially.
+4. Leave **Follow new daily folders automatically = Yes**, channel **6**, and maximum reading age **180 seconds** initially.
 5. Click **Check latest temperature**, compare it with LSCI Reader, then run the resonator batch as usual.
 
 Logging is optional and disabled initially so existing base-power profiles still run. Save settings to retain your path/channel/age selection. If you enable logging, missing, invalid or stale temperatures stop the run rather than silently dropping temperature recording. If a failure happens after VNA acquisition, that acquired trace is saved with the read error before the run stops. RF is disabled during cleanup.
@@ -16,15 +16,19 @@ No additional Python dependency or Lake Shore driver is required for file readin
 
 ## Observed file and record format
 
-The supplied photo shows `CoolDownData/26-11-16/CH6 T 26-11-16.txt` (Explorer hides `.txt`) with rows like:
+The lab photos show both `CH6 T26-11-17.txt` and the spaced form `CH6 T 26-11-16.txt` under daily folders (Explorer hides `.txt`). Both are accepted. Rows look like:
 
 ```
 16-11-26,00:30:08,1.432770E-2
 ```
 
-Filenames use **yy-mm-dd**. Row dates use **dd-mm-yy** and 24-hour local time. Values are kelvin: this example is **14.3277 mK**. Only `CH6 T` (or the selected channel's `T`) is accepted; `R`, `P` and MaxiGauge pressure logs are excluded. The reader supports UTF-8/ASCII and UTF-16 with a byte-order mark, CRLF/LF line endings, and scientific notation.
+Filenames use **yy-mm-dd** or **yyyy-mm-dd**; hyphens/underscores, optional spacing around T, case-insensitive names, and .txt/.csv/.log (or no extension) are accepted. Row dates use **dd-mm-yy** and 24-hour local time. Values are kelvin: this example is **14.3277 mK**. Only `CH6 T` (or the selected channel's `T`) is accepted; `R`, `P` and MaxiGauge pressure logs are excluded. The reader supports UTF-8/ASCII and UTF-16 with a byte-order mark, CRLF/LF line endings, and scientific notation.
 
-Select the top-level CoolDownData folder for unattended daily rollover. On every snapshot the reader searches the selected folder and its immediate daily subfolders and selects the newest dated matching temperature file. A selected daily folder or individual file stays pinned; it will eventually become stale after midnight. Duplicate newest-date files require choosing a more specific folder/file. No complete row in the newest file is an error.
+Select the top-level **CoolDownData** folder for unattended daily rollover. With **Follow new daily folders automatically = Yes** (default), each read recursively searches for the newest dated temperature file. It handles daily folders and year/month nesting under the selected root. If a saved path selects a dated daily folder or one of its temperature files, the reader searches from that daily folder's parent, so a new sibling daily folder is found without editing the profile or restarting. A now-missing dated folder/file in an old profile can still resolve through its existing parent.
+
+For explicitly pinned diagnostics, set **Follow new daily folders automatically = No** and choose the exact temperature file or daily folder. Root-folder pinned mode searches direct children only. Duplicate matching files for the same newest date cause an error rather than arbitrarily choosing a copy; select the intended file and turn automatic following off.
+
+At midnight, a newly created file can be empty or contain only a partial first record. The reader can temporarily use the previous day's complete record, which must still pass the normal age check. Once the new file has a complete row it is selected automatically. A malformed complete row never triggers fallback to older data.
 
 Only complete newline-terminated rows are consumed, so an unfinished append is ignored. A malformed latest complete record is an error; the reader does not silently revert to an older valid record. It reads a bounded 64 KiB tail and closes the file immediately after each read.
 
@@ -38,6 +42,7 @@ Each trace's JSON includes `temperature_before_k`, `temperature_after_k` and com
 - `read_ended_utc`: time the app observed the file.
 - `age_s`: difference between those timestamps; the default maximum is 180 seconds.
 - `log_file` and `source_line`: exact source and row for auditing.
+- `log_search_root` and `log_follow_daily`: resolved search location and rollover policy.
 - `primary_channel`, kelvin value and `simulated: false` for the thermometer source.
 
 `temperature_log.csv` also includes source time, age, file and row at each trace boundary. Raw VNA complex arrays and fitting inputs remain unchanged. A simulated VNA can read an actual log file for an end-to-end rehearsal; the trace metadata still identifies the VNA as simulated.
